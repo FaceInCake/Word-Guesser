@@ -44,7 +44,7 @@ class Application(tk.Frame):
         # We just check for files of words of length 5->9, that can change
         for i in range(3, 11):
             f = None
-            try: f = open("WordLists/Words"+str(i)+".txt")
+            try: f = open("Assets/WordLists/Words"+str(i)+".txt")
             except FileNotFoundError: continue
             f.close()
             self.menu_new.add_command(
@@ -128,7 +128,7 @@ class Application(tk.Frame):
         # Read all the words from the appropriate file
         _ls:str = str(_l)
         f = None
-        try: f = open("WordLists/Words"+_ls+".txt")
+        try: f = open("Assets/WordLists/Words"+_ls+".txt")
         except FileNotFoundError:
             messagebox.showerror("Error: File not found",
                 "File containing all words of length ("+_ls+") was not found.\n"+
