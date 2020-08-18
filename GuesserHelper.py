@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import messagebox
-from sys import platform, path
 from random import randint
 from math import ceil
 
@@ -33,20 +32,21 @@ class Application(tk.Frame):
     def initMasterWidget(self):
         self.master.title("Word Guesser Helper")
         self.master.option_add("*Font", "Consolas 12")
+        self.master.iconbitmap("Assets/Icon.ico")
         self.master.resizable(False, False)
         self.pack(padx=10, pady=10)
 
     def createMenuBar(self):
         self.menu_bar:tk.Menu = tk.Menu(self)
         self.master["menu"] = self.menu_bar
-        self.menu_new:tk.Menu = tk.Menu(self.menu_bar)
+        self.menu_new:tk.Menu = tk.Menu(self.menu_bar, tearoff=0)
         # Any file named Words#.txt can be used
-        # We just check for files of words of length 1->11, that can change
-        for i in range(1, 11):
-            try: f = open(path[0]+"/Words"+str(i)+".txt")
+        # We just check for files of words of length 5->9, that can change
+        for i in range(3, 11):
+            f = None
+            try: f = open("WordLists/Words"+str(i)+".txt")
             except FileNotFoundError: continue
             f.close()
-            # File exists, assume (hope) file is valid
             self.menu_new.add_command(
                 label="Start "+str(i)+" letter word",
                 command=lambda i=i:self.startWord(i)
@@ -125,22 +125,29 @@ class Application(tk.Frame):
             self.lettersUsed[l] = False
 
     def startWord(self, _l:int):
+        # Read all the words from the appropriate file
+        _ls:str = str(_l)
+        f = None
+        try: f = open("WordLists/Words"+_ls+".txt")
+        except FileNotFoundError:
+            messagebox.showerror("Error: File not found",
+                "File containing all words of length ("+_ls+") was not found.\n"+
+                "It should be here: <programFolder>/WordLists/Words"+_ls+".txt"
+            )
+            return
+        if not f.readable():
+            messagebox.showerror("Error: File not readable",
+                "File is protected for one reason or another.\n"+
+                "Is the program installed on an external device?"
+            )
+            return
+        self.allWords = f.readlines()
+        f.close()
+        # Init now, as file could've failed
         self.length = _l
         self.createEntries(self.length)
         self.known = ["*"] * self.length
         self.initLettersUsed()
-        # Read all the words from the appropriate file
-        f = open(path[0]+"/Words"+str(self.length)+".txt")
-        if not f:
-            self.master.destroy()
-            print("Error: File not found")
-            exit(-1)
-        if not f.readable():
-            self.master.destroy()
-            print("Error: File is protected")
-            exit(-1)
-        self.allWords = f.readlines()
-        f.close()
         # Validate all the read words
         for i in range(len(self.allWords)-1, -1, -1):
             newWord:str = ""
@@ -153,6 +160,7 @@ class Application(tk.Frame):
                 self.allWords.pop(i)
         # Start off our outputs
         self.possible = self.allWords.copy()
+        self.displayPossible()
         self.updateGuess()
 
     def updatePossible(self):
@@ -176,9 +184,8 @@ class Application(tk.Frame):
     def displayPossible(self):
         if len(self.possible)>=1:
             SEPERATOR = "    "
-            wordsPerLine:int = { # length of word -> words that'll fit per line
-                5:6, 6:5, 7:4, 8:4
-            }.get(self.length, 3)
+            getWordsPerLine = lambda _length : round(38 / (_length + 1.7))
+            wordsPerLine:int = getWordsPerLine(self.length)
             wordsCount:int = wordsPerLine * 4 - 1
             s:str = "Possible Words"
             if len(self.possible) > wordsCount:
@@ -186,7 +193,7 @@ class Application(tk.Frame):
                 words:list = [""] * (wordsCount + 1)
                 interval:int = int(len(self.possible) / wordsCount)
                 for i in range(wordsCount):
-                    j:int = interval*i + randint(0, interval)
+                    j:int = interval*i + randint(0, interval-1)
                     words[i] = self.possible[j]
                 words[wordsCount] = " "*(self.length-3) + "..."
                 for line in range(4):
@@ -197,7 +204,7 @@ class Application(tk.Frame):
             else:
                 # We can display all words, so do that
                 linesUsed = ceil(len(self.possible) / wordsPerLine)
-                s += "\n" * (4 - linesUsed)
+                s += "\n" * (5 - linesUsed)
                 for line in range(linesUsed-1):
                     s += concat(self.possible[
                             line*wordsPerLine : (line+1)*wordsPerLine
@@ -251,6 +258,9 @@ class Application(tk.Frame):
             else:
                 self.known[num] = "*"
                 self.strings_letters[num].set("")
+            if prev == self.known[num]:
+                # nothing changed, dont update anything
+                return
             if prev != "*":
                 try: self.known.index(prev)
                 except ValueError: self.lettersUsed[prev] = False
@@ -274,9 +284,13 @@ class Application(tk.Frame):
                         l = letter.lower()
                         newKnownNot += l
                         self.lettersUsed[l] = True
-                # newKnownNot was calc. in the two for loops (survivedLetters + new ones)
+                # newKnownNot was calc. in the two for loops (og - removed + added)
+                if self.prevKnownNot == newKnownNot:
+                    # nothing changed, dont update anything
+                    self.string_knownNot.set(self.prevKnownNot)
+                    return
                 self.prevKnownNot = newKnownNot
-                self.string_knownNot.set(self.prevKnownNot)
+                self.string_knownNot.set(self.prevKnownNot)  
         # Update all our stuff. Can bind to a button aswell if ya like
         self.updatePossible()
         self.displayPossible()
