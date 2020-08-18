@@ -8,7 +8,7 @@ import sys
 base = 'Win32GUI' if sys.platform=='win32' else None
 
 executables = [
-    Executable('GuesserHelper.py', base=base)
+    Executable('WordGuesserHelper.py', base=base)
 ]
 
 setup(name='Word Guesser Helper',
