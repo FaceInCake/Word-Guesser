@@ -1,2 +1,4 @@
 # Ignore all builds
 build/**
+# Ignore the vscode launch info
+.vscode/**
