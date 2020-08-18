@@ -18,7 +18,7 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master:tk.Frame = master
         self.possible:list = [] # List of all possible words (strings)
-        self.allWords:list = [] # List of all not possible words (strings)
+        self.allWords:list = []
         self.known:list = []
         self.prevKnownNot:str = ""
         self.length:int = 0
